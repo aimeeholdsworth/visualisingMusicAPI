@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css?family=Work+Sans:600');
+
+
+text{
+	
+	font-family:'Work Sans', sans-serif;
+
+}
+
+/*.node :hover {
+	font-size: 50px;
+	z-index: 9999;
+	position: relative;
+}*/
+
+body {
+height:100%;
+background: linear-gradient(#687681,white)	;
+text-align: center;
+font-family:'Work Sans', sans-serif;
+color:white;
+
+}
+
+
+html {
+min-height:100% !important;
+background: linear-gradient(#687681,white)  ;
+text-align: center;
+font-family:'Work Sans', sans-serif;
+color:white;
+webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+
+}
+
+
+
+button, input{
+	font-size: 14px;
+        background: #3F474E;
+        color: white;
+        border: none;
+        outline:none;
+        padding: 4px 8px;
+        letter-spacing: 1px;
+        height: 30px !important;
+        display: inline-block;
+        font-family:'Work Sans', sans-serif;
+}
+
+button:hover {
+        background: #252E34;
+        color: #A6BCCD;
+      }
+
+
+input:hover {
+        background: #252E34;
+        color: #A6BCCD;
+      }
+
+
+input{
+	margin-right: 20px;
+}
+
+select{
+	height:31px;
+	background: #3F474E;
+    color: white;
+    font-family:'Work Sans', sans-serif;
+
+}
+
+
+div.tooltip {   
+    position: absolute;         
+    text-align: center;         
+    width: 60px;                    
+    height: 28px;                   
+    padding: 2px;               
+    font: 12px sans-serif;      
+    background: lightsteelblue; 
+    border: 0px;        
+    border-radius: 8px;         
+    pointer-events: none;           
+}
+

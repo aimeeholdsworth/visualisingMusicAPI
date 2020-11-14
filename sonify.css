@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css?family=Work+Sans:600');
+
+body {
+        font-family: monospace;
+        line-height: 1.5;
+        background-color: 	#687681;
+        padding: 20px;
+      }
+      button {
+        font-size: 14px;
+        background: #3F474E;
+        color: white;
+        border: none;
+        outline:none;
+        padding: 4px 8px;
+        letter-spacing: 1px;
+        height: 30px !important;
+        display: inline-block;
+      }
+      button:hover {
+        background: #252E34;
+        color: #A6BCCD;
+      }
+
+      body > div:nth-child(7) > button:nth-child(2){
+      	padding-top: 3px;
+      }
+
+      body > div:nth-child(7) > button:nth-child(5){
+      	padding-top: 5px;
+      }
+
+      .lyrics{
+        font-family:'Work Sans', sans-serif;
+        color:white;
+        font-size:1em;
+        float:left !important;
+      }
+
+      .title {
+      	text-align: center ;
+      	font-size: 3em;
+      	margin: 0px;
+      	color: white;
+      	font-family:'Work Sans', sans-serif;
+
+      }
+
+      .album_info{
+      	text-align: center ;
+      	font-size: 2em;
+      	margin: 0px;
+      	color: white;
+      	font-family:'Work Sans', sans-serif;
+      }
+
+      #album{
+      	padding-bottom: 30px;
+      }
+
+      body > div:nth-child(7){
+      	display: inline-block;
+      }

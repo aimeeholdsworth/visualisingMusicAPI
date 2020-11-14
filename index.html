@@ -1,0 +1,480 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <link rel="icon" href="images/favicon.png"> <!-- Puts a music note icon in the tab on the browser -->
+  <meta http-equiv="Access-Control-Allow-Origin" content="*"><!-- Allows cross origin calls-->
+  
+  <script src="https://d3js.org/d3.v4.min.js"></script> <!-- Links to D3 library -->
+  <script src="loadJson.php"></script><!--Links to the php page which is linked to the online database to load the data. As previously agreed becuase it wouldn't work on my chart I have still used a CSV file to create the bubble chart however the data from the online database is printed in the console so show it is properly connected -->
+  <link rel="stylesheet" href="mainPage.css"><!--Links to the css for the main page / this page-->
+  </head>
+<body>
+<div id="response">
+<div>
+  <h1>100 Most Listened to Songs of 2017</h1><!-- Title and information on page explaining the graph-->
+  <p>This visualisation created using D3.js shows the 100 most listened to songs across the world from 2017. There are several different ways to interact with it, so have some fun and don't forget to check the bubbles! (Hint click, drag and zoom!)</p>
+
+  <!--Drop down menu-->
+  <select name="list" id="list" accesskey="target"> <!--Creates the main drop down element and each item is held inside this a bit like a list-->
+
+      
+      <option value="formation2.html">Formation</option><!-- Each option is connected to the corresponding page to go to that page once go has been clicked-->
+      <option value="lazarus.html">Lazarus</option>
+      <option value="UltraLight.html">UltraLight Beam</option>
+      <option value="cranes.html">Cranes In The Sky</option>
+      <option value="work.html">Work</option>
+      <option value="yourBest.html">Your Best American Girl</option>
+      <option value="shutup.html">Shut Up Kiss Me</option>
+      <option value="blackstar.html">Blackstar</option>
+      <option value="blackBeatles.html">Black Beatles</option>
+  <select>
+  <input type=button value="Go" onclick="goToNewPage()" /> <!--The button for the drop down menu, once this is clicked the goToNewPage function runs and takes the user to their chosen page-->
+
+ 
+
+<!--Buttons for the user to sort the data. By clicking a button the data will be resorted according to that button. Each function is run once the button is clicked and the function does a different job and sorts the data by colour-->
+<button onclick="changeGenre(); " type = "button" value="go">Sort By Genre</button>
+<button onclick="changePosition(); " type = "button" value="go">Sort By Chart Position</button>
+<button onclick="random(); " type = "button" value="go">MultiColoured</button>
+
+</div>   
+
+
+
+<!--Creates the svg that will hold the chart once it has been created with d3 and sets the size and position on the page-->
+<svg width="700" height="700" font-family="sans-serif" font-size="10" text-anchor="middle"></svg>
+
+</div>
+</body>
+
+
+
+
+
+
+
+
+
+
+<!--Script to create the d3 chart is all below-->
+
+<script>
+  
+
+  //This function is for the drop down menu and when a bubble in the chart has been clicked on. It takes the user to a new page once they have clicked on something, in my case is is either a button or one of the bubbles in the chart
+
+function goToNewPage()
+    {
+        var url = document.getElementById('list').value;//this gets the url from the drop down list
+        if(url != 'none') {
+            window.location = url;  //this makes the page go to the new url
+        }
+    }
+
+
+//set up global variables
+
+var drag_behavior = d3.drag() //using the built in feautre in d3 of drag this code allows the user to zoom in and out and move the chart around.
+                              .on("start", dragstarted) //these each link to a different function that tells the code what to do when the user starts to drag, is in the middle of it and ends
+                              .on("drag", dragged)
+                              .on("end", dragended);
+
+
+
+
+// Define the div for the tooltip
+var tooltip = d3.select("body")
+    .append("div")//selects the body and adds a div to it to hold the tooltip info
+    .style("position", "absolute")// adds styling to the tooltip
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+    .style("color", "white")
+    .style("padding", "8px")
+    .style("background-color", "rgba(0, 0, 0, 0.75)")
+    .style("border-radius", "6px")
+    .style("font", "12px sans-serif")
+    .text("tooltip"); //links to tooltip to select the right text to display on screen
+
+
+
+var svg = d3.select("svg"), //creates a variable called svg that links to the created svg and sets its size
+    width = +svg.attr("width"),
+    height = +svg.attr("height");
+
+
+function responsivefy(div) {
+      // get container + svg aspect ratio
+      var container = d3.select(svg.node().parentNode),
+          width = parseInt(svg.style("width")),
+          height = parseInt(svg.style("height")),
+          aspect = width / height;
+
+      // add viewBox and preserveAspectRatio properties,
+      // and call resize so that svg resizes on inital page load
+      svg.attr("viewBox", "0 0 " + width + " " + height)
+          .attr("preserveAspectRatio", "xMinYMid")
+          .call(resize);
+
+      // to register multiple listeners for same event type,
+      // you need to add namespace, i.e., 'click.foo'
+      // necessary if you call invoke this function for multiple svgs
+      // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+      d3.select(window).on("resize." + container.attr("id"), resize);
+
+      // get width of container and resize svg to fit it
+      function resize() {
+          var targetWidth = parseInt(container.style("width"))/2; //make it align
+          svg.attr("width", targetWidth);
+          svg.attr("height", Math.round(targetWidth / aspect));
+      }
+    }
+
+   
+
+d3.select("#response")
+ .call(responsivefy);
+
+var color = d3.scaleOrdinal()
+  //creates my own colour range for the bubble chart using these specific colours
+  .range(["#ee4646", "#c11072" , "#7e417c", "#2191b2", " #2cbae3", "#18677F", "#FF008D"]);
+
+var pack = d3.pack() //this is a feautre of the bubble chart that organises the chart
+    .size([width, height]) //limits the chart to be within this size
+    .padding(5); //increasing the padding spreads the bubbles out more
+
+
+
+//creates the global variables diameter and genre which are used to access data from the csv file to draw the bubbles
+var diameter;
+var genre;
+
+
+//this code is where the drawing of the chart starts
+//links the dataset to the code
+d3.csv("music2.csv", function(d) {
+  d.diameter = +d.diameter; //sets diameter as to the variable from the dataset
+  
+  if (d.diameter) return d;
+}, function(error, classes) {//throws errors if this doesn't work
+  if (error) throw error;
+
+  var root = d3.hierarchy({children: classes}) //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      .sum(function(d) { return d.diameter; })
+      .each(function(d) {
+        if (title = d.data.title) {
+          var title, i = title.lastIndexOf(".");
+          d.title = title;
+          d.package = title.slice(0, i);
+          d.class = title.slice(i + 1);
+          
+          d.genre = genre;
+        }
+      })
+     
+     ;
+
+
+//sets up variables for accessing the data from the csv file 
+var data;
+var url_id; //this is the for the url from the csv file so that it is held somewhere the code can use it
+
+
+d3.json("loadJson.php", function(d) {
+//as the data from php my admin will not draw the chart this just prints the data to the console to show that it is connected properly to the database via php and cpanel. (This is something that was previously agreed was ok to allow)
+ console.log(d);
+})
+
+
+
+
+
+d3.select("body") //selects the body (so the whole page) and uses d3's zoom behaviour to implement a zoom funciton.
+ .call(d3.zoom().on("zoom", function () {
+        svg.attr("transform", d3.event.transform)
+
+        
+        }));
+       
+    
+
+
+
+
+
+
+  var node = svg.selectAll(".node") //this code allows the bubbles in the bubble chart to be selected individually
+
+    .data(pack(root).leaves())
+    .enter().append("g") //adds a group so that each bubble is in it's own group
+
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; }) //sorts out the size of each node 
+
+
+      .call(drag_behavior) //this calls the previously created variable drag_behaviour that allows the user to move the bubble around. It works here becuase it is selecting the individual bubbles and not the whole chart. It means they can move one bubble around
+
+
+
+      
+      //when a bubble has been clicked on it will take the user to a new page. It get's this page from the url_id variable which was previously declared and linked to the CSV file to gain the data
+      .on('click', clicked)
+      .attr("xlink:href", function(d){
+        return url_id;
+        
+      })
+
+
+
+     
+   
+    
+
+//adds a group to the svg
+var g = svg.append('g')
+ 
+
+      
+      
+
+
+
+ 
+
+
+
+
+
+
+
+  node.append("circle") //although the nodes have been created they aren't actually drawing the circle yet. To create the visual that the user sees (ie. the bubble) a circle must be appeneded to each bubble
+      
+      .attr("title", function(d) { return d.title; })//this links to the CSV file to print the title of each song on top of the bubble
+      .attr("r", function(d) { return d.r; })// this links to the CSV file to work out the radius of each bubble
+      .style("fill", function(d) { return color(d.package); })//links to the previously created color variable to fill the bubbles with the colour scheme that I created
+      
+
+    
+      
+
+      
+      
+
+
+
+//adds interactivity when the user hovers over each bubble
+.on("mouseover", function(d) { 
+      let g = d3.select(this) //selects the bubble that the user is hovering over
+      
+        .style("cursor", "pointer")//changes the mouse to a pointer   
+      
+        .style("fill", "grey") //when hovered over the bubble will change to grey to show the user they are hovering over it
+        .append("g")
+        .attr("class", "text-group").remove() //before the tooltip was added this was showing the title data but in a worse way. I have removed this so that it won't show when the bubble is hovered over
+
+        tooltip.html("Artist: " + d.data.artist+  "   <br/>   Position: " + d.data.position);//links to the tooltip variable created near the beginning. It prints the artist and position data of each song when the bubble is hovered over
+        tooltip.style("visibility", "visible")//when being hovered over the tooltip becomes visible
+        ;
+ 
+     
+        })
+
+//this makes the tooltip move to where the mouse is. This means it will shows the correct data over the bubble rather than at the bottom of the page
+.on("mousemove", function() {
+          return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
+        })
+
+
+      .on("mouseout", function(d) { //undo these changes when the mouse leaves/the bubble is not hovered over
+      d3.select(this)
+        .style("cursor", "none")  //removes the cursor
+        .transition(1000).style("fill", function(d) { return color(d.package); })//changes the bubbles colour back to its original one and not grey
+        tooltip.style("visibility", "hidden")//hides the tooltip again
+        
+        .select(".text-group").remove();
+    })
+
+      
+
+
+
+//this block of code creates the title on each bubble. Styling and clipping is used to make the text fit inside the bubbles and be in the centre of the bubble
+  node.append("clipPath")
+
+      .attr("title", function(d) { return "clip-" + d.title; })
+    .append("use")
+      .attr("xlink:href", function(d) { return "url_id" + d.title; });
+
+  node.append("text")
+
+
+      .attr("clip-path", function(d) { return "url(#clip-" + d.title + ")"; })
+    .selectAll("tspan")
+    .data(function(d) { return d.class.split(/(?=[A-Z][^A-Z])/g); })
+    .enter().append("tspan")
+    .transition(2000)
+      .attr("x", 0) // centre line of text
+      .attr("y", function(d, i, nodes) { return 13 + (i - nodes.length / 2 - 0.5) * 10; }) //seperate text onto different lines if long
+      .text(function(d) { return d; })
+
+
+
+      
+
+});
+
+
+
+
+//creates a variabe to allow the user to zoom into the chart when they double click. It uses the same zoom behaviour that d3 has built in
+var clickzoom = d3.zoom()
+
+    
+    .scaleExtent([0, 1])//limits to how much the user zooms in
+    .on("zoom", zoomed); //runs the zoomed function when the zoom starts
+var active = d3.select(null);
+
+
+
+
+
+
+
+//Below are all the funcitons that I used throughout my code
+
+
+
+  function clicked(d) {
+//this function is for when a bubble is clicked on
+
+    if (active.node() === this){ //wprks out which node has been clicked on / which node is active
+      active.classed("active", false);
+      return reset();
+    }
+    
+    active = d3.select(this).classed("active", true); //sets the active node as the one d3 needs to select
+
+   
+    url_id = d.data.id; //sets the variable url_id to the id (which is the link) from the CSV file
+    
+        
+    window.location = url_id; //when the function has run take the window/browser to a new location which is url_id
+        }
+  
+
+
+
+
+  function zoomed() { //this allows the zoom to happen. It scales along the x scale
+    svg.attr("transform", d3.event.transform.rescaleX(xScale));
+  }
+
+
+function dragstarted() { //this is for the drag behaviour. At the start of the drag it figures out which bubble has been clicked on and .raise() brings it to the front so it won't disappear behind other bubbles
+          d3.select(this).raise();
+          
+        }
+
+        function dragged(shape) {//dragged is when the dragging actualy starts. This function figures out how to move the bubble according to what the user is doing and repositions it on page
+
+            var dx = d3.event.sourceEvent.offsetX,
+                dy = d3.event.sourceEvent.offsetY;
+
+            d3.select(this)
+              .attr("transform", shape => "translate(" + dx + "," + dy + ")");
+        }
+
+
+
+function dragended(d) {//dragended is at the end of the drag once the user has let the bubble go
+  d3.select(this)//it selects the bubble that the user has just moved and makes it go back to it's original position. A transisiton is added to slow this down 
+  .transition(1000).attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+
+         
+        } 
+
+
+
+
+
+
+
+//the next three functions link to the buttons at the top fo the page to resort the data based on a different key identifier
+
+//this function changes the colour of the bubbles depending on their genre
+function changeGenre(){
+ 
+  d3.selectAll("circle")//select all the circles and fill them according to their genre - this data is taken from the csv file
+
+     .style("fill", function(d) { return color(d.data.genre); })
+     
+
+
+
+      .on("mouseout", function(d) { //as there is a mouseover function that would override the new colouring, a mouseout function needs to be added to this function
+      d3.select(this)
+        .style("cursor", "none")  //it selects the bubble and makes sure it returns to the correct colour based on it's genre when the mouse is not hovering over it anymore
+        .style("fill", function(d) { return color(d.data.genre); })
+
+
+
+})}
+
+
+function random(){ // this is the original colour scheme for the bubble chart. It recolours the chart to how it was when first loaded
+ 
+  d3.selectAll("circle")
+
+      .style("fill", function(d) { return color(d.package); })
+
+}
+
+
+
+function changePosition(){ //colour the chart based on each songs position in the top 100 chart
+ 
+  d3.selectAll("circle")//selects all the circles so they can be coloured
+
+     .style("fill", function(d) { 
+      if (d.data.position <=10) { //if the song is in the top 10 songs it will be coloured red
+        {return "#ee4646"}
+      }
+
+      else if (d.data.position >50 ){ //if the song is above the top 50 songs it will be coloured a light blue
+        {return "#2191b2"}
+      }
+
+      else {return "#18677F"} //else it will be dark blue (so everything between 11-50)
+      })
+     
+
+
+
+      .on("mouseout", function(d) { ///as there is a mouseover function that would override the new colouring, a mouseout function needs to be added to this function
+      d3.select(this)
+        .style("cursor", "none")  
+        .style("fill", function(d) { if (d.data.position <=10) {
+        {return "#ee4646"}//it selects the bubble and makes sure it returns to the correct colour based on it's position when the mouse is not hovering over it anymore
+      }
+
+      else if (d.data.position >50 ){
+        {return "#2191b2"}//it selects the bubble and makes sure it returns to the correct colour based on it's position when the mouse is not hovering over it anymore
+      }
+
+      else {return "#18677F"}//it selects the bubble and makes sure it returns to the correct colour based on it's position when the mouse is not hovering over it anymore
+      })
+
+
+
+})}
+
+   
+
+
+
+</script>
+
+</html>
